@@ -10,6 +10,6 @@ A simple container inspired by:
 The main purpose is to have a SonarQube server quickly and ready to be used, with a MySQL database.
 
 Three services are running at startup:
-- Open-Ssh Server exposed on port 22
-- MySQL exposed on port 3306
+- Open-Ssh Server on port 22
+- MySQL on port 3306
 - SonarQube on port 9000
