@@ -13,3 +13,7 @@ Three services are running at startup:
 - Open-Ssh Server on port 22
 - MySQL on port 3306
 - SonarQube on port 9000
+
+Username: root   Password: root   for ssh
+Username: root 					  for mysql
+Username: sonar  Password: sonar  for mysql
