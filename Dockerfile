@@ -1,20 +1,31 @@
-#FROM jahroots/java
-#MAINTAINER Jahroots "Jahroots@gmail.com"
-
 FROM debian:latest
 MAINTAINER Jahroots "Jahroots@gmail.com"
 
 RUN apt-get update
-RUN apt-get -y install curl unzip openssh-server supervisor
+RUN apt-get -y install curl unzip openssh-server supervisor mysql-server
 
+### Configuration MySQL
+RUN  rm -rf /var/lib/apt/lists/* && \
+  sed -i 's/^\(bind-address\s.*\)/# \1/' /etc/mysql/my.cnf && \
+  sed -i 's/^\(log_error\s.*\)/# \1/' /etc/mysql/my.cnf && \
+  echo "mysqld_safe &" > /tmp/config && \
+  echo "mysqladmin --silent --wait=30 ping || exit 1" >> /tmp/config && \
+  echo "mysql -e 'GRANT ALL PRIVILEGES ON *.* TO \"root\"@\"%\" WITH GRANT OPTION;'" >> /tmp/config && \
+  echo "mysql -e 'CREATE DATABASE sonar;'" >> /tmp/config && \
+  echo "mysql -e 'CREATE USER \"sonar\"@\"localhost\" IDENTIFIED BY \"sonar\"';" >> /tmp/config && \
+  echo "mysql -e 'GRANT ALL PRIVILEGES ON *.* TO \"sonar\"@\"localhost\" WITH GRANT OPTION;'" >> /tmp/config && \	  	  
+  echo "mysql -e 'GRANT ALL PRIVILEGES ON *.* TO \"root\"@\"%\" WITH GRANT OPTION;'" >> /tmp/config && \
+  bash /tmp/config && \
+  rm -f /tmp/config
+
+### Installation Java
 ENV JAVA_VERSION_MAJOR 8
 ENV JAVA_VERSION_MINOR 20
 ENV JAVA_VERSION_BUILD 26
 ENV JAVA_PACKAGE       server-jre
 
-#RUN curl -kLOH "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie"\
-#  http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz
-RUN curl -O http://192.168.1.25/dockerTmp/server-jre-8u20-linux-x64.tar.gz
+RUN curl -kLOH "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie"\
+  http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz
 RUN gunzip ${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz &&\
     tar -xf ${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar -C /opt &&\
     rm ${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar &&\
@@ -45,21 +56,24 @@ RUN gunzip ${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64
 ENV JAVA_HOME /opt/jdk
 ENV PATH ${PATH}:${JAVA_HOME}/bin
 
-#RUN apt-get update && apt-get install -y unzip openssh-server supervisor
+### Configure ssh
 RUN mkdir -p /var/run/sshd
 RUN chmod 755 /var/run/sshd
-RUN mkdir -p /var/log/supervisor
-
-### Configure ssh
 RUN echo 'root:root' |chpasswd
 RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 RUN sed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config
 RUN sed -ri 's/PermitRootLogin without-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
 
-#RUN curl -O http://dist.sonar.codehaus.org/sonarqube-4.5.zip
-RUN curl -O http://192.168.1.25/dockerTmp/sonarqube-4.5.zip
+### Installation and configuration of SonarQube
+RUN curl -O http://dist.sonar.codehaus.org/sonarqube-4.5.zip
 RUN unzip sonarqube-4.5.zip -d /opt
 RUN	rm sonarqube-4.5.zip
+ADD startSonar.sh /opt/startSonar.sh
+RUN chmod +x /opt/startSonar.sh
+
+RUN sed -e 's/^#sonar.jdbc.url=jdbc:mysql/sonar.jdbc.url=jdbc:mysql/' -e 's/^#sonar.jdbc.username/sonar.jdbc.username/' -e 's/^#sonar.jdbc.password/sonar.jdbc.password/' /opt/sonarqube-4.5/conf/sonar.properties > /opt/sonarqube-4.5/conf/sonar.properties.new
+RUN mv /opt/sonarqube-4.5/conf/sonar.properties /opt/sonarqube-4.5/conf/sonar.properties.bak
+RUN mv /opt/sonarqube-4.5/conf/sonar.properties.new /opt/sonarqube-4.5/conf/sonar.properties
 
 ### Clean
 RUN apt-get -y autoclean
@@ -67,10 +81,15 @@ RUN apt-get -y clean
 RUN apt-get -y autoremove
 
 ### Configure Supervisor
+RUN mkdir -p /var/log/supervisor
 ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+### Configure volumes
 VOLUME ["/opt/sonarqube-4.5"]
-EXPOSE 22 9000
+VOLUME ["/etc/mysql", "/var/lib/mysql"]
 
-###
+###Expose ports
+EXPOSE 22 3306 9000
+
+### Start Supervisor
 CMD ["/usr/bin/supervisord","-n"]
