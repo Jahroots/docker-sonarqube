@@ -1,9 +1,11 @@
 Docker-SonarQube
 ================
 
-A simple container inspired by:
+A simple container based on:
 
 - [dockerfile/mysql](https://registry.hub.docker.com/u/dockerfile/mysql/)
+
+and inspired by:
 
 - [jeanblanchard/busybox-java](https://registry.hub.docker.com/u/jeanblanchard/busybox-java/)
 
@@ -15,5 +17,7 @@ Three services are running at startup:
 - SonarQube on port 9000
 
 Username: root   Password: root   for ssh
+
 Username: root 					  for mysql
+
 Username: sonar  Password: sonar  for mysql
