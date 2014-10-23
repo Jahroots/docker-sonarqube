@@ -54,7 +54,8 @@ RUN sed -ri 's/PermitRootLogin without-password/PermitRootLogin yes/g' /etc/ssh/
 RUN curl -O http://dist.sonar.codehaus.org/sonarqube-4.5.zip
 RUN unzip sonarqube-4.5.zip -d /opt
 RUN	rm sonarqube-4.5.zip
-RUN rm -rf /opt/sonarqube-4.5/bin/linux-ppc-64 \
+RUN rm -rf /opt/sonarqube-4.5/bin/jsw-license \
+           /opt/sonarqube-4.5/bin/linux-ppc-64 \
            /opt/sonarqube-4.5/bin/linux-x86-32 \
            /opt/sonarqube-4.5/bin/macosx-universal-64 \
            /opt/sonarqube-4.5/bin/solaris-sparc-32 \
