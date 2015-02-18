@@ -6,8 +6,8 @@ RUN apt-get -y install curl unzip openssh-server supervisor
 
 ### Installation Java
 ENV JAVA_VERSION_MAJOR 8
-ENV JAVA_VERSION_MINOR 20
-ENV JAVA_VERSION_BUILD 26
+ENV JAVA_VERSION_MINOR 31
+ENV JAVA_VERSION_BUILD 13
 ENV JAVA_PACKAGE       server-jre
 
 RUN curl -kLOH "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie"\
@@ -51,15 +51,17 @@ RUN sed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config
 RUN sed -ri 's/PermitRootLogin without-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
 
 ### Installation and configuration of SonarQube
-RUN curl -O http://dist.sonar.codehaus.org/sonarqube-4.5.zip
-RUN unzip sonarqube-4.5.zip -d /opt
-RUN	rm sonarqube-4.5.zip
+ENV SONAR_VERSION 5.0
+RUN curl -O http://dist.sonar.codehaus.org/sonarqube-$SONAR_VERSION.zip
+RUN unzip sonarqube-$SONAR_VERSION.zip -d /opt
+RUN	rm sonarqube-$SONAR_VERSION.zip
+RUN mv /opt/sonarqube-$SONAR_VERSION /opt/sonarqube
 ADD startSonar.sh /opt/startSonar.sh
 RUN chmod +x /opt/startSonar.sh
 
-RUN sed -e 's/^#sonar.jdbc.url=jdbc:mysql/sonar.jdbc.url=jdbc:mysql/' -e 's/^#sonar.jdbc.username/sonar.jdbc.username/' -e 's/^#sonar.jdbc.password/sonar.jdbc.password/' /opt/sonarqube-4.5/conf/sonar.properties > /opt/sonarqube-4.5/conf/sonar.properties.new
-RUN mv /opt/sonarqube-4.5/conf/sonar.properties /opt/sonarqube-4.5/conf/sonar.properties.bak
-RUN mv /opt/sonarqube-4.5/conf/sonar.properties.new /opt/sonarqube-4.5/conf/sonar.properties
+RUN sed -e 's/^#sonar.jdbc.url=jdbc:mysql/sonar.jdbc.url=jdbc:mysql/' -e 's/^#sonar.jdbc.username/sonar.jdbc.username/' -e 's/^#sonar.jdbc.password/sonar.jdbc.password/' /opt/sonarqube/conf/sonar.properties > /opt/sonarqube/conf/sonar.properties.new
+RUN mv /opt/sonarqube/conf/sonar.properties /opt/sonarqube/conf/sonar.properties.bak
+RUN mv /opt/sonarqube/conf/sonar.properties.new /opt/sonarqube/conf/sonar.properties
 
 ### Clean
 RUN apt-get -y autoclean
@@ -71,7 +73,7 @@ RUN mkdir -p /var/log/supervisor
 ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 ### Configure volumes
-VOLUME ["/opt/sonarqube-4.5"]
+VOLUME ["/opt/sonarqube"]
 
 ###Expose ports
 EXPOSE 22 9000
