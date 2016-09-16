@@ -1,6 +1,7 @@
 Docker-SonarQube
 ================
 
+[![](https://images.microbadger.com/badges/image/jahroots/sonarqube.svg)](https://microbadger.com/images/jahroots/sonarqube "Get your own image badge on microbadger.com")
 [![](https://images.microbadger.com/badges/version/jahroots/sonarqube.svg)](https://microbadger.com/images/jahroots/sonarqube "Get your own version badge on microbadger.com")
 
 A simple container based on:
